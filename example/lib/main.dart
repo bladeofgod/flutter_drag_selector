@@ -34,14 +34,21 @@ class _MyAppState extends State<MyApp> {
     sink.add((data.$1, data.$2 || _dragRecords.contains(data.$1)));
   });
 
+  final scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    // scrollController.addListener(() {
+    //   final pos = scrollController.position;
+    //   debugPrint('${pos.axis}------- ${pos.extentBefore} ===== ${pos.pixels}');
+    // });
   }
 
   @override
   void dispose() {
     _controller.close();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -87,6 +94,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: CursorSelectorWidget(
+          scrollController: scrollController,
           dragStartCallback: (start) {
             //_dragRecords.clear();
           },
@@ -94,6 +102,7 @@ class _MyAppState extends State<MyApp> {
             debugPrint('${t.$1} ------ ${t.$2}');
             _controller.add(t);
           }, child: SingleChildScrollView(
+          controller: scrollController,
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
@@ -130,12 +139,15 @@ class CursorSelectorWidget extends StatefulWidget {
   /// * e.g. scroll [ListView]
   final GestureDragUpdateCallback? dragUpdateCallback;
 
+  final ScrollController scrollController;
+
   const CursorSelectorWidget({super.key,
     required this.child,
+    required this.scrollController,
     this.selectedChangedCallback,
     this.dragStartCallback,
     this.dragEndCallback,
-    this.dragUpdateCallback});
+    this.dragUpdateCallback, });
 
   @override
   State<StatefulWidget> createState() {
@@ -160,6 +172,12 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
     widget.selectedChangedCallback?.call(event);
   }
 
+  @override
+  void initState() {
+    super.initState();
+
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -173,15 +191,22 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
           final ancestor = ctx.findRenderObject();
           return GestureDetector(
             onPanStart: (start) {
-              debugPrint('---====--${start.localPosition}');
               _start = start.localPosition;
               _eventRecords.clear();
               widget.dragStartCallback?.call(start);
             },
             onPanUpdate: (update) {
               _panUpdater.value = update.localPosition;
-              debugPrint('${update.globalPosition}---====--${update.localPosition}');
-              provider?.cursorDragZoneChanged(Rect.fromPoints(_start!, update.localPosition), ancestor);
+              Rect selectArea = Rect.fromPoints(_start!, update.localPosition);
+              final sc = widget.scrollController;
+              final scrollOffset = sc.offset;
+              switch(sc.position.axis) {
+                case Axis.horizontal:
+                  selectArea = Rect.fromLTRB(selectArea.left - scrollOffset, selectArea.top, selectArea.right, selectArea.bottom);
+                case Axis.vertical:
+                  selectArea = Rect.fromLTRB(selectArea.left, selectArea.top - scrollOffset, selectArea.right, selectArea.bottom);
+              }
+              provider?.cursorDragZoneChanged(selectArea, ancestor);
               widget.dragUpdateCallback?.call(update);
             },
             onPanEnd: (end) {
@@ -251,11 +276,6 @@ class _SelectableItemState extends State<SelectableItem> with SelectTestBinding 
 
 }
 
-extension RectExt on Rect {
-  Rect abs() {
-    return Rect.fromLTRB(left.abs(), top.abs(), right.abs(), bottom.abs());
-  }
-}
 
 mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
 
@@ -266,11 +286,10 @@ mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
       final paintRect = rb.paintBounds;
       final pos = rb.localToGlobal(Offset.zero, ancestor: ancestor);
       final realRect = paintRect.shift(pos);
-      return selectRect.overlaps(realRect.abs());
+      return selectRect.overlaps(realRect);
     }
     return false;
   }
-
 }
 
 class CursorSelectorProvider extends InheritedWidget {

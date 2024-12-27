@@ -16,23 +16,10 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-
 class _MyAppState extends State<MyApp> {
-
   final _list = List.generate(50, (i) => i);
 
   final _controller = StreamController<(Key?, bool)>.broadcast();
-
-  final _dragRecords = <Key?>{};
-
-  late final _itemStreamTransform = StreamTransformer<(Key?, bool), (Key?, bool)>.fromHandlers(handleData: (data, sink) {
-    if(data.$2) {
-      _dragRecords.add(data.$1);
-    } else {
-
-    }
-    sink.add((data.$1, data.$2 || _dragRecords.contains(data.$1)));
-  });
 
   final scrollController = ScrollController();
 
@@ -77,9 +64,14 @@ class _MyAppState extends State<MyApp> {
                         '$index',
                         style: TextStyle(fontSize: 20),
                       ),
-                      const SizedBox(width: 20,),
-                      Icon((snapshot.data?.$2 ?? false) ? Icons.check_box : Icons.check_box_outline_blank, size: 40, color: Colors.red,)
-
+                      const SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        (snapshot.data?.$2 ?? false) ? Icons.check_box : Icons.check_box_outline_blank,
+                        size: 40,
+                        color: Colors.red,
+                      )
                     ],
                   ),
                 ),
@@ -94,72 +86,91 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: CursorSelectorWidget(
-          scrollController: scrollController,
-          dragStartCallback: (start) {
-            //_dragRecords.clear();
-          },
-          selectedChangedCallback: (t) {
-            debugPrint('${t.$1} ------ ${t.$2}');
-            _controller.add(t);
-          }, child: SingleChildScrollView(
-          controller: scrollController,
+            scrollController: scrollController,
+            dragStartCallback: (start) {
+              //_dragRecords.clear();
+            },
+            dragUpdateCallback: (update, selectZone) {
+              final vd = scrollController.position.viewportDimension;
+              final scrollPos = scrollController.offset;
+              //debugPrint('$selectZone---- ${update.delta}  ==========${update.sourceTimeStamp?.inMicroseconds} ');
+              final jumpPos = switch(scrollController.position.axis) {
+                Axis.horizontal => update.delta.dx,
+                Axis.vertical => update.delta.dy,
+              };
+              final localPos = update.localPosition;
+              if(localPos.dy > vd || localPos.dy < 0) {
+                scrollController.position.pointerScroll(jumpPos);
+              }
+            },
+            selectedChangedCallback: (t) {
+              //debugPrint('${t.$1} ------ ${t.$2}');
+              _controller.add(t);
+            },
+            child: SingleChildScrollView(
+              controller: scrollController,
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: _list.map<Widget>(buildBox).toList(),
               ),
-        )),
+            )),
       ),
     );
   }
 }
 
-///selectable container.
+///Selector-rect changed callback
+typedef SelectZoneChangedCallback = void Function(DragUpdateDetails details, Rect selectZone);
+
+///Selectable container.
 ///see also [SelectableItem]
 class CursorSelectorWidget extends StatefulWidget {
-
-  ///this child will be in selected zone.
+  ///This child will be in selected zone.
   /// e.g. [ListView], [GridView]
   /// see also [SelectableItem]
   final Widget child;
 
-  ///it will trigger this callback when cursor start drag.
+  ///It will trigger this callback when cursor start drag.
   /// * the event of this callback has been distinct.
   /// see also [CursorSelectorProvider.selectedStream], and you can directly listen it.
   final ValueChanged<(Key?, bool)>? selectedChangedCallback;
 
-  ///cursor drag start will trigger this callback.
+  ///Cursor drag start will trigger this callback.
   final GestureDragStartCallback? dragStartCallback;
 
-  ///cursor drag end will trigger this callback.
+  ///Cursor drag end will trigger this callback.
   final GestureDragEndCallback? dragEndCallback;
 
-  ///cursor drag update callback
+  ///This callback is triggered when dragging the mouse cursor causes
+  ///the rect to changed.
   /// * you can set this callback for listen drag details.
   /// * e.g. scroll [ListView]
-  final GestureDragUpdateCallback? dragUpdateCallback;
+  final SelectZoneChangedCallback? dragUpdateCallback;
 
   final ScrollController scrollController;
 
-  const CursorSelectorWidget({super.key,
+  const CursorSelectorWidget({
+    super.key,
     required this.child,
     required this.scrollController,
     this.selectedChangedCallback,
     this.dragStartCallback,
     this.dragEndCallback,
-    this.dragUpdateCallback, });
+    this.dragUpdateCallback,
+  });
 
   @override
   State<StatefulWidget> createState() {
     return _CursorSelectorWidget();
   }
-
 }
 
 class _CursorSelectorWidget extends State<CursorSelectorWidget> {
 
   Offset? _start;
 
+  ///Update ui of rect selection area.
   final _panUpdater = ValueNotifier<Offset?>(null);
 
   final _eventRecords = <Key?, bool>{};
@@ -167,7 +178,7 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
   void _distinctCallback((Key?, bool) event) {
     final key = event.$1;
     final isSelected = event.$2;
-    if(_eventRecords.containsKey(key) && _eventRecords[key] == isSelected) return;
+    if (_eventRecords.containsKey(key) && _eventRecords[key] == isSelected) return;
     _eventRecords[key] = isSelected;
     widget.selectedChangedCallback?.call(event);
   }
@@ -175,9 +186,7 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
   @override
   void initState() {
     super.initState();
-
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +194,7 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
       child: LayoutBuilder(
         builder: (ctx, cons) {
           final provider = CursorSelectorProvider.maybeOf(ctx);
-          if(widget.selectedChangedCallback != null) {
+          if (widget.selectedChangedCallback != null) {
             provider?.selectedStream.listen(_distinctCallback);
           }
           final ancestor = ctx.findRenderObject();
@@ -200,14 +209,16 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
               Rect selectArea = Rect.fromPoints(_start!, update.localPosition);
               final sc = widget.scrollController;
               final scrollOffset = sc.offset;
-              switch(sc.position.axis) {
+              switch (sc.position.axis) {
                 case Axis.horizontal:
-                  selectArea = Rect.fromLTRB(selectArea.left - scrollOffset, selectArea.top, selectArea.right, selectArea.bottom);
+                  selectArea = Rect.fromLTRB(
+                      selectArea.left - scrollOffset, selectArea.top, selectArea.right, selectArea.bottom);
                 case Axis.vertical:
-                  selectArea = Rect.fromLTRB(selectArea.left, selectArea.top - scrollOffset, selectArea.right, selectArea.bottom);
+                  selectArea = Rect.fromLTRB(
+                      selectArea.left, selectArea.top - scrollOffset, selectArea.right, selectArea.bottom);
               }
               provider?.cursorDragZoneChanged(selectArea, ancestor);
-              widget.dragUpdateCallback?.call(update);
+              widget.dragUpdateCallback?.call(update, selectArea);
             },
             onPanEnd: (end) {
               _start = null;
@@ -235,13 +246,11 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
       ),
     );
   }
-
 }
 
 ///The child who wanna be selected.
 /// * [key] must be set.
 class SelectableItem extends StatefulWidget {
-
   const SelectableItem({required super.key, required this.child});
 
   ///the child of select-zone.
@@ -252,11 +261,9 @@ class SelectableItem extends StatefulWidget {
   State<StatefulWidget> createState() {
     return _SelectableItemState();
   }
-
 }
 
 class _SelectableItemState extends State<SelectableItem> with SelectTestBinding {
-
   @override
   void initState() {
     super.initState();
@@ -273,16 +280,13 @@ class _SelectableItemState extends State<SelectableItem> with SelectTestBinding 
     CursorSelectorProvider.maybeOf(context)?.registerTester(widget.key, this);
     return widget.child;
   }
-
 }
 
-
 mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
-
   ///Test the cursor drag zone is overlay this child-widget
   bool selectTest(Rect selectRect, RenderObject? ancestor) {
     final rb = context.findRenderObject();
-    if(rb is RenderBox) {
+    if (rb is RenderBox) {
       final paintRect = rb.paintBounds;
       final pos = rb.localToGlobal(Offset.zero, ancestor: ancestor);
       final realRect = paintRect.shift(pos);
@@ -304,6 +308,8 @@ class CursorSelectorProvider extends InheritedWidget {
 
   final _selectorController = StreamController<(Key?, bool)>.broadcast();
 
+  ///listen the selectable-item's test result.
+  ///(item's-key, isSelected)
   Stream<(Key?, bool)> get selectedStream => _selectorController.stream;
 
   ///cursor drag-zone changed
@@ -318,10 +324,12 @@ class CursorSelectorProvider extends InheritedWidget {
   }
 
   ///register child that who want be test in cursor-drag-zone
+  ///[key] is relate of your item
   void registerTester(Key? key, SelectTestBinding target) {
     _selectorTest[key] = target;
   }
 
+  ///remove the item that no need selected.
   void removeTester(Key? key) {
     _selectorTest.remove(key);
   }
@@ -331,20 +339,3 @@ class CursorSelectorProvider extends InheritedWidget {
     return _selectorTest.length != oldWidget._selectorTest.length;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

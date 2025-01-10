@@ -87,17 +87,8 @@ class _MyAppState extends State<MyApp> {
               //_dragRecords.clear();
             },
             dragUpdateCallback: (update, selectZone) {
-              final vd = scrollController.position.viewportDimension;
-              final scrollPos = scrollController.offset;
-              //debugPrint('$selectZone---- ${update.delta}  ==========${update.sourceTimeStamp?.inMicroseconds} ');
-              final jumpPos = switch(scrollController.position.axis) {
-                Axis.horizontal => update.delta.dx,
-                Axis.vertical => update.delta.dy,
-              };
-              final localPos = update.localPosition;
-              if(localPos.dy > vd || localPos.dy < 0) {
-                scrollController.position.pointerScroll(jumpPos);
-              }
+            },
+            dragEndCallback: (end) {
             },
             selectedChangedCallback: (t) {
               _controller.add(t);
@@ -113,6 +104,11 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+
+
 }
+
+
+
 
 

@@ -55,7 +55,6 @@ class CursorSelectorWidget extends StatefulWidget {
 }
 
 class _CursorSelectorWidget extends State<CursorSelectorWidget> {
-
   late final CursorSelectorScrollHandler _scrollViewHelper;
 
   Offset? _start;
@@ -79,8 +78,8 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
 
   @override
   void initState() {
-    _scrollViewHelper = widget.selectorScrollHandler ?? DefaultCursorSelectorScrollHandler();
-    _scrollViewHelper.holdScroller(widget.scrollController);
+    _scrollViewHelper =
+        widget.selectorScrollHandler ?? DefaultCursorSelectorScrollHandler(scrollController: widget.scrollController);
     super.initState();
   }
 
@@ -180,7 +179,6 @@ class _SelectableItemState extends State<SelectableItem> with SelectTestBinding 
   }
 }
 
-
 ///Helps item-widget test if it is in the selection area.
 mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
   ///Test the cursor drag zone is overlay this child-widget
@@ -240,35 +238,31 @@ class CursorSelectorProvider extends InheritedWidget {
   }
 }
 
-
 abstract class CursorSelectorScrollHandler {
+  final ScrollController scrollController;
 
-  ScrollController? scrollController;
-  void holdScroller(ScrollController controller) {
-    scrollController = controller;
-  }
+  CursorSelectorScrollHandler({required this.scrollController});
 
   void onPanUpdate(DragUpdateDetails details);
 
   void onPanEnd(DragEndDetails details);
-
 }
 
-
 class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler {
+  DefaultCursorSelectorScrollHandler({required super.scrollController});
 
   bool _autoScrollSignal = false;
 
   void _launchAutoScroll(double jumpPos) {
     Future<void> startMove() async {
-      if(!_autoScrollSignal || scrollController == null) return;
-      scrollController!.position.pointerScroll(jumpPos);
+      if (!_autoScrollSignal) return;
+      scrollController.position.pointerScroll(jumpPos);
       await WidgetsBinding.instance.endOfFrame;
       unawaited(startMove());
     }
+
     startMove();
   }
-
 
   @override
   void onPanEnd(DragEndDetails details) {
@@ -277,40 +271,19 @@ class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler {
 
   @override
   void onPanUpdate(DragUpdateDetails details) {
-    if(scrollController != null) {
-      final controller = scrollController!;
-      final vd = controller.position.viewportDimension;
-      final jumpPos = switch(controller.position.axis) {
-        Axis.horizontal => details.delta.dx,
-        Axis.vertical => details.delta.dy,
-      };
-      final localPos = details.localPosition;
-      if(localPos.dy > vd || localPos.dy < 0) {
-        if(!_autoScrollSignal) {
-          _autoScrollSignal = true;
-          _launchAutoScroll(jumpPos);
-        }
-      } else {
-        _autoScrollSignal = false;
+    final vd = scrollController.position.viewportDimension;
+    final jumpPos = switch (scrollController.position.axis) {
+      Axis.horizontal => details.delta.dx,
+      Axis.vertical => details.delta.dy,
+    };
+    final localPos = details.localPosition;
+    if (localPos.dy > vd || localPos.dy < 0) {
+      if (!_autoScrollSignal) {
+        _autoScrollSignal = true;
+        _launchAutoScroll(jumpPos);
       }
+    } else {
+      _autoScrollSignal = false;
     }
   }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -58,7 +58,7 @@ class _MyAppState extends State<MyApp> {
                     children: [
                       Text(
                         '$index',
-                        style: TextStyle(fontSize: 20),
+                        style: const TextStyle(fontSize: 20),
                       ),
                       const SizedBox(
                         width: 20,

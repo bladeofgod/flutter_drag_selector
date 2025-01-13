@@ -180,6 +180,8 @@ class _SelectableItemState extends State<SelectableItem> with SelectTestBinding 
   }
 }
 
+
+///Helps item-widget test if it is in the selection area.
 mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
   ///Test the cursor drag zone is overlay this child-widget
   bool selectTest(Rect selectRect, RenderObject? ancestor) {

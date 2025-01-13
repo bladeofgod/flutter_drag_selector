@@ -272,6 +272,7 @@ class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler {
 
   @override
   void onPanEnd(DragEndDetails details) {
+    _autoScrollSignal = false;
   }
 
   @override

@@ -1,7 +1,7 @@
 name: flutter_drag_selector
 description: "drag mouse cursor for select bunch widget in zone"
 version: 0.0.1
-homepage:
+homepage: https://github.com/bladeofgod/flutter_drag_selector/#/
 
 environment:
   sdk: ^3.5.4

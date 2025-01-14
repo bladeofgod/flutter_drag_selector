@@ -79,7 +79,7 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
   @override
   void initState() {
     _scrollViewHelper =
-        widget.selectorScrollHandler ?? DefaultCursorSelectorScrollHandler(scrollController: widget.scrollController);
+        widget.selectorScrollHandler ?? DefaultCursorSelectorScrollHandler(childViewScrollController: widget.scrollController);
     super.initState();
   }
 
@@ -239,34 +239,23 @@ class CursorSelectorProvider extends InheritedWidget {
 }
 
 abstract class CursorSelectorScrollHandler {
-  final ScrollController scrollController;
 
-  CursorSelectorScrollHandler({required this.scrollController});
+  final ScrollController childViewScrollController;
+
+  CursorSelectorScrollHandler({required this.childViewScrollController});
 
   void onPanUpdate(DragUpdateDetails details);
 
   void onPanEnd(DragEndDetails details);
 }
 
-class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler {
-  DefaultCursorSelectorScrollHandler({required super.scrollController});
 
-  bool _autoScrollSignal = false;
-
-  void _launchAutoScroll(double jumpPos) {
-    Future<void> startMove() async {
-      if (!_autoScrollSignal) return;
-      scrollController.position.pointerScroll(jumpPos);
-      await WidgetsBinding.instance.endOfFrame;
-      unawaited(startMove());
-    }
-
-    startMove();
-  }
+class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler with _AutoScrollBinding {
+  DefaultCursorSelectorScrollHandler({required super.childViewScrollController});
 
   @override
   void onPanEnd(DragEndDetails details) {
-    _autoScrollSignal = false;
+    stopAutoScroll();
   }
 
   @override
@@ -278,12 +267,40 @@ class DefaultCursorSelectorScrollHandler extends CursorSelectorScrollHandler {
     };
     final localPos = details.localPosition;
     if (localPos.dy > vd || localPos.dy < 0) {
-      if (!_autoScrollSignal) {
-        _autoScrollSignal = true;
-        _launchAutoScroll(jumpPos);
-      }
+      startAutoScroll(jumpPos);
     } else {
-      _autoScrollSignal = false;
+      stopAutoScroll();
     }
+  }
+
+  @override
+  ScrollController get scrollController => childViewScrollController;
+}
+
+
+mixin _AutoScrollBinding {
+
+  bool _autoScrollSignal = false;
+
+  ScrollController get scrollController;
+
+  void _launchAutoScroll(double jumpPos) {
+    Future<void> startMove() async {
+      if (!_autoScrollSignal) return;
+      scrollController.position.pointerScroll(jumpPos);
+      await WidgetsBinding.instance.endOfFrame;
+      unawaited(startMove());
+    }
+    startMove();
+  }
+
+  void stopAutoScroll() {
+    _autoScrollSignal = false;
+  }
+
+  void startAutoScroll(double jumpPos) {
+    if(_autoScrollSignal) return;
+    _autoScrollSignal = true;
+    _launchAutoScroll(jumpPos);
   }
 }

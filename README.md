@@ -2,6 +2,8 @@
 
 drag mouse cursor for select bunch widget in zone
 
+![Cursor selector Demo](https://github.com/bladeofgod/flutter_drag_selector/blob/main/img_introduce.gif "Cursor selector Demo")
+
 ## Getting Started
 
 Add this to your package's `pubspec.yaml` file:

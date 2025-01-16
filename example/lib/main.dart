@@ -46,7 +46,7 @@ class _MyAppState extends State<MyApp> {
               key: id,
               child: GestureDetector(
                 onTap: () {
-                  debugPrint('tap---- $index');
+                  debugPrint('tap -> $index');
                 },
                 child: Container(
                   width: 200,
@@ -83,13 +83,6 @@ class _MyAppState extends State<MyApp> {
         ),
         body: CursorSelectorWidget(
             scrollController: scrollController,
-            dragStartCallback: (start) {
-              //_dragRecords.clear();
-            },
-            dragUpdateCallback: (update, selectZone) {
-            },
-            dragEndCallback: (end) {
-            },
             selectedChangedCallback: (t) {
               _controller.add(t);
             },

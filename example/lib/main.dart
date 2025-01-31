@@ -81,7 +81,12 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: CursorSelectorWidget(
+        body: CursorSelectorTheme(
+            data: CursorSelectorThemeData(selectedAreaDecoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(10)
+            )),
+            child: CursorSelectorWidget(
             scrollController: scrollController,
             selectedChangedCallback: (t) {
               _controller.add(t);
@@ -93,7 +98,7 @@ class _MyAppState extends State<MyApp> {
                 runSpacing: 10,
                 children: _list.map<Widget>(buildBox).toList(),
               ),
-            )),
+            ))),
       ),
     );
   }

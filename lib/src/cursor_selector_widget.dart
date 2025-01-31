@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'cursor_selector_theme.dart';
+
 /// Selector-rect changed callback
 typedef SelectZoneChangedCallback = void Function(DragUpdateDetails details, Rect selectZone);
 
@@ -136,7 +138,9 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
                       if (v == null || _start == null) return const SizedBox.shrink();
                       return Positioned.fromRect(
                           rect: Rect.fromPoints(_start!, v),
-                          child: ColoredBox(color: Colors.lightBlueAccent.withOpacity(0.4)));
+                          child: DecoratedBox(decoration: CursorSelectorTheme.of(context)?.selectedAreaDecoration ?? BoxDecoration(
+                            color: Colors.blueAccent.withValues(alpha: .4)
+                          )));
                     })
               ],
             ),

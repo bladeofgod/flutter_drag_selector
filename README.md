@@ -91,19 +91,24 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: CursorSelectorWidget(
-            scrollController: scrollController,
-            selectedChangedCallback: (t) {
-              _controller.add(t);
-            },
-            child: SingleChildScrollView(
-              controller: scrollController,
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: _list.map<Widget>(buildBox).toList(),
-              ),
+        body: CursorSelectorTheme(
+            data: CursorSelectorThemeData(selectedAreaDecoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(10)
             )),
+            child: CursorSelectorWidget(
+                scrollController: scrollController,
+                selectedChangedCallback: (t) {
+                  _controller.add(t);
+                },
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: _list.map<Widget>(buildBox).toList(),
+                  ),
+                ))),
       ),
     );
   }

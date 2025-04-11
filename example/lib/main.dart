@@ -75,7 +75,6 @@ class _MyAppState extends State<MyApp> {
             );
           });
     }
-
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
@@ -83,7 +82,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: CursorSelectorTheme(
             data: CursorSelectorThemeData(selectedAreaDecoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.4),
+              color: Colors.blue.withOpacity(.4),
               borderRadius: BorderRadius.circular(10)
             )),
             child: CursorSelectorWidget(

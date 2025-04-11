@@ -139,7 +139,7 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
                       return Positioned.fromRect(
                           rect: Rect.fromPoints(_start!, v),
                           child: DecoratedBox(decoration: CursorSelectorTheme.of(context)?.selectedAreaDecoration ?? BoxDecoration(
-                            color: Colors.blueAccent.withValues(alpha: .4)
+                            color: Colors.blueAccent.withOpacity(.4)
                           )));
                     })
               ],
@@ -154,11 +154,14 @@ class _CursorSelectorWidget extends State<CursorSelectorWidget> {
 /// The child who wanna be selected.
 /// * [key] must be set.
 class SelectableItem extends StatefulWidget {
-  const SelectableItem({required super.key, required this.child});
+  const SelectableItem({required super.key, required this.child, this.addRepaintBoundaries = true});
 
   /// The child of select-zone.
   ///* e.g. children of [ListView] or [GridView], and so on.
   final Widget child;
+
+  /// Wrap child with [RepaintBoundary]
+  final bool addRepaintBoundaries;
 
   @override
   State<StatefulWidget> createState() {
@@ -181,7 +184,11 @@ class _SelectableItemState extends State<SelectableItem> with SelectTestBinding 
   @override
   Widget build(BuildContext context) {
     CursorSelectorProvider.maybeOf(context)?.registerTester(widget.key, this);
-    return widget.child;
+    Widget child = widget.child;
+    if(widget.addRepaintBoundaries) {
+      child = RepaintBoundary(child: child,);
+    }
+    return child;
   }
 }
 

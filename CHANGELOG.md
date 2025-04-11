@@ -1,3 +1,9 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+* initial release.
+
+## 0.0.5
+
+* add `addRepaintBoundaries` for SelectableItem
+* update example color's api
+* add _SelectorCalculateThrottle to reduce the select-test frequency

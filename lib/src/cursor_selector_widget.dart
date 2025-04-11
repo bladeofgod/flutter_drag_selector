@@ -207,6 +207,26 @@ mixin SelectTestBinding<T extends StatefulWidget> on State<T> {
   }
 }
 
+class _SelectorCalculateThrottle {
+
+  ///Select test interval (milliseconds).
+  /// * To reduce frequency of children's select-test.
+  /// see [cursorDragZoneChanged] and [SelectTestBinding.selectTest]
+  static const _testSelectIntervalMill = 32;
+
+  ///Children last select-test timestamp.
+  int _lastSelectTestTimeMill = 0;
+
+  bool canProceed() {
+    final nowMill = DateTime.now().millisecondsSinceEpoch;
+    if(nowMill - _lastSelectTestTimeMill < _testSelectIntervalMill) return false;
+    _lastSelectTestTimeMill = nowMill;
+    return true;
+  }
+
+}
+
+
 class CursorSelectorProvider extends InheritedWidget {
   CursorSelectorProvider({super.key, required super.child});
 
@@ -223,14 +243,19 @@ class CursorSelectorProvider extends InheritedWidget {
   /// (item's-key, isSelected)
   Stream<(Key?, bool)> get selectedStream => _selectorController.stream;
 
+
+  final selectTestThrottle = _SelectorCalculateThrottle();
+
   /// Cursor drag-zone changed
   /// * [rect] cursor's drag zone
   /// * [ancestor] contained all children and drag-zone rect
   void cursorDragZoneChanged(Rect rect, RenderObject? ancestor) {
-    for (final item in _selectorTest.entries) {
-      final box = item.value;
-      final isSelected = box.selectTest(rect, ancestor);
-      _selectorController.add((item.key, isSelected));
+    if(selectTestThrottle.canProceed()) {
+      for (final item in _selectorTest.entries) {
+        final box = item.value;
+        final isSelected = box.selectTest(rect, ancestor);
+        _selectorController.add((item.key, isSelected));
+      }
     }
   }
 
